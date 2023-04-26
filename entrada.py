@@ -1,7 +1,7 @@
 import model
 
 
-class Informações:
+class Informacoes:
 
     nome = model.Frase(50, 'nome completo')
     bio = model.Texto('biografia')

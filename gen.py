@@ -52,14 +52,13 @@ def gen_form(objs):
 
 def create_conn_db(objs):
     data_sql = {
-        model.Frase: 'VARCHAR(SIZE)',
+        model.Frase: 'VARCHAR(255)',
         model.Texto: 'TEXT',
         model.Data: 'DATE',
     }
-
+    content = ''
     for inst in objs:
-        # print(inst.__name__)
-        content = f'''
+        content += f'''
 from flask import Flask, render_template, request
 import sqlite3
 
@@ -67,7 +66,7 @@ app = Flask(__name__, template_folder='./')
 
 @app.route('/')
 def formulario():
-    return render_template('form.html')
+    return render_template('{inst.__name__.lower()}.html')
 
 @app.route('/processar_formulario', methods=['POST'])
 def processar_formulario():
@@ -75,29 +74,36 @@ def processar_formulario():
     '''
         for attr in get_attributes(inst()):
             obj = getattr(inst, attr)
-            content += f'''{attr} = request.form['{attr}']
+            content += f'''
+    {attr} = request.form['{attr}']'''
+        content += f'''
+    conn.execute(\'''CREATE TABLE IF NOT EXISTS {inst.__name__.lower()}
+        (id INTEGER PRIMARY KEY AUTOINCREMENT,
+        '''
+        cols = list()
+        for item in get_attributes(inst()):
+            cols.append(item)
+            key = type(getattr(inst, item))
+            content += f'''
+        {item} {data_sql[key]},'''
+        content = content[:-1] + ");\'\'\')"
+        cols = ', '.join(cols)
+        content += f'''
+    conn.execute("INSERT INTO {inst.__name__.lower()} ({cols}) VALUES (?, ?, ?)", 
+                  ({cols}))
+    
+    conn.commit()
+    conn.close()
+
+    return 'Dados salvos com sucesso!'
+
+if __name__ == '__main__':
+    app.run(debug=True)
     '''
 
-#     conn.execute(\'''CREATE TABLE IF NOT EXISTS formulario
-#         (id INTEGER PRIMARY KEY AUTOINCREMENT,
-#         nome_completo TEXT,
-#         biografia TEXT,
-#         data_atualizacao DATE);\''')
-
-#     conn.execute("INSERT INTO formulario (nome_completo, biografia, data_atualizacao) VALUES (?, ?, ?)", 
-#                  (nome_completo, biografia, data_atualizacao))
-#     conn.commit()
-#     conn.close()
-
-#     return 'Dados salvos com sucesso!'
-
-# if __name__ == '__main__':
-#     app.run(debug=True)
-#     '''
-
-        for obj in objs:
-            with open(f'{obj.__name__.lower()}.py', 'w') as app_arq:
-                app_arq.write(content)
+    for obj in objs:
+        with open(f'{obj.__name__.lower()}.py', 'w') as app_arq:
+            app_arq.write(content)
 
 
 def main():

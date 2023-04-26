@@ -6,15 +6,15 @@ app = Flask(__name__, template_folder='./')
 # Rota para exibir o formulário HTML
 @app.route('/')
 def formulario():
-    return render_template('form.html')
+    return render_template('informações.html')
 
 # Rota para processar os dados do formulário HTML
 @app.route('/processar_formulario', methods=['POST'])
 def processar_formulario():
     # Obtenha os valores dos campos do formulário
-    nome_completo = request.form['nome_completo']
-    biografia = request.form['biografia']
-    data_atualizacao = request.form['data_atualizacao']
+    nome_completo = request.form['nome']
+    biografia = request.form['bio']
+    data_atualizacao = request.form['ultima_atualizacao']
 
     # Estabeleça uma conexão com o banco de dados
     conn = sqlite3.connect('formulario.db')
